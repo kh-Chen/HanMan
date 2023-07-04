@@ -82,11 +82,23 @@ class HanmanSpider():
             chapter_name_full = f"{num}. {chapter_name}"
             chapter_path = os.path.join(book_img, chapter_name_full)
 
-            if os.path.exists(chapter_path):
-                files = os.listdir(chapter_path)
-                if len(files) >= int(pnum):
-                    print(f"skip: {chapter_path}")
-                    continue
+            ready_chapters = os.listdir(book_img)
+            for ready_chapter in ready_chapters:
+                if chapter_name == ready_chapter[5:]:
+                    if ready_chapter != chapter_name_full:
+                        os.rename(os.path.join(book_img, ready_chapter), chapter_path)
+
+                    files = os.listdir(chapter_path)
+                    if len(files) >= int(pnum):
+                        print(f"skip: {chapter_path}")
+                        continue
+
+
+            # if os.path.exists(chapter_path):
+            #     files = os.listdir(chapter_path)
+            #     if len(files) >= int(pnum):
+            #         print(f"skip: {chapter_path}")
+            #         continue
 
             if not os.path.exists(chapter_path):
                 os.mkdir(chapter_path)
@@ -188,3 +200,5 @@ def start():
     spider.run()
     print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
 
+if __name__ == '__main__':
+    start()
