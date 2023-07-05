@@ -43,6 +43,7 @@ class HanmanSpider():
 
 
     def run(self):
+        print(f' run at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} --------------------------')
         jsonfile = os.path.join(self.store_dir_path, "books.json")
         with open(jsonfile, "r") as f:
             books = json.load(f)
@@ -52,6 +53,7 @@ class HanmanSpider():
             self.do_book(bookitem)
             time.sleep(1)
         print("end.")
+        print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
     
 
     def do_book(self, bookitem):
@@ -191,14 +193,18 @@ class HanmanSpider():
             except Exception as e:
                 print(f'获取失败。code: {r.status_code} link: {link} error: {e}')
         # print(filepath + " end.")
-        
 
 
-def start():
-    print(f' run at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} --------------------------')
-    spider = HanmanSpider()
-    spider.run()
-    print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
+def timer():
+    while True:
+        now = time.localtime()
+        if now.tm_hour == 4 and now.tm_min == 0 and now.tm_sec == 0:
+            spider = HanmanSpider()
+            spider.run()
+        else:
+            time.sleep(1)
+
 
 if __name__ == '__main__':
-    start()
+    spider = HanmanSpider()
+    spider.run()
