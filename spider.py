@@ -85,22 +85,22 @@ class HanmanSpider():
             chapter_path = os.path.join(book_img, chapter_name_full)
 
             ready_chapters = os.listdir(book_img)
+            downloaded = False
             for ready_chapter in ready_chapters:
                 if chapter_name == ready_chapter[5:]:
                     if ready_chapter != chapter_name_full:
-                        os.rename(os.path.join(book_img, ready_chapter), chapter_path)
+                        ready_chapter_path = os.path.join(book_img, ready_chapter)
+                        print(f"rename: {ready_chapter_path} -> {chapter_path}")
+                        os.rename(ready_chapter_path, chapter_path)
 
                     files = os.listdir(chapter_path)
                     if len(files) >= int(pnum):
-                        print(f"skip: {chapter_path}")
-                        continue
-
-
-            # if os.path.exists(chapter_path):
-            #     files = os.listdir(chapter_path)
-            #     if len(files) >= int(pnum):
-            #         print(f"skip: {chapter_path}")
-            #         continue
+                        downloaded = True
+                        break
+            
+            if downloaded:
+                print(f"skip: {chapter_path}")
+                continue
 
             if not os.path.exists(chapter_path):
                 os.mkdir(chapter_path)
