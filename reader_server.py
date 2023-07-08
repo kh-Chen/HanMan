@@ -124,17 +124,14 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         with open(json_path, "r+") as f:
             books = json.load(f)
-            target_index = -1
             for index,bookitem in enumerate(books):
                 if bookitem["name"] == bookname:
                     bookitem["readAt"] = chapter[0:3]
-                    target_index = index
+                    if next == '' and bookitem["end"]:
+                        books.append(books[index])
+                        books.remove(books[index])
                     break
             
-            if next == '' and books["end"]:
-                books.append(books[target_index])
-                books.remove(books[target_index])
-
             jsonstr = json.dumps(books, ensure_ascii=False)
             jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
             f.seek(0)
