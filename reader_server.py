@@ -89,18 +89,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         bookname = decodeURLSafe(query.get('bookname', [''])[0])
         chapter = decodeURLSafe(query.get('chapter', [''])[0])
 
-        with open(json_path, "r+") as f:
-            books = json.load(f)
-            for bookitem in books:
-                if bookitem["name"] == bookname:
-                    bookitem["readAt"] = chapter[0:3]
-                    break
-            jsonstr = json.dumps(books, ensure_ascii=False)
-            jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
-            f.seek(0)
-            f.truncate()
-            f.write(jsonstr)
-
         img_folder = os.path.join(imgs_path, bookname, chapter)
         if not os.path.exists(img_folder) or not os.path.isdir(img_folder):
             return f"bookname:{bookname} chapter:{chapter} not found"
@@ -132,6 +120,27 @@ class RequestHandler(BaseHTTPRequestHandler):
             imgs.sort(key=lambda img: int(os.path.basename(img)[0:3]))
             for img in imgs:
                 img_link_htmls += f"            <img src=\"/hanman/images/{replaceURLSafe(bookname)}/{replaceURLSafe(chapter)}/{img}\" /> \n"
+
+
+        with open(json_path, "r+") as f:
+            books = json.load(f)
+            target_index = -1
+            for index,bookitem in enumerate(books):
+                if bookitem["name"] == bookname:
+                    bookitem["readAt"] = chapter[0:3]
+                    target_index = index
+                    break
+            
+            if next == '' and books["end"]:
+                books.append(books[target_index])
+                books.remove(books[target_index])
+
+            jsonstr = json.dumps(books, ensure_ascii=False)
+            jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
+            f.seek(0)
+            f.truncate()
+            f.write(jsonstr)
+
 
         return templates.TEMPLATE_CHAPTER_IMGS\
                 .replace("                <img_here />", img_link_htmls)\
