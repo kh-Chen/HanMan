@@ -147,12 +147,16 @@ class HanmanSpider():
         url = f"{self.domain}/index.php/api/comic/chapter?mid={mid}"
         time.sleep(1)
         print(f"request to: {url}")
-        res = requests.get(url=url, headers=self.headers, proxies=self.proxies)
+        try:
+            res = requests.get(url=url, headers=self.headers, proxies=self.proxies)
+        except Exception as e:
+            print(e)
+            return []
+        
         res.encoding = 'utf-8'
         if res.status_code != 200:
             print(f"request to {url} error! code:{res.status_code}")
             return []
-
         text = res.text
         return json.loads(text)["data"]
 
