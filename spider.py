@@ -42,7 +42,7 @@ class HanmanSpider():
         return book_img_path
 
 
-    def run(self):
+    def run(self, id=''):
         print(f' run at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} --------------------------')
         jsonfile = os.path.join(self.store_dir_path, "books.json")
         with open(jsonfile, "r") as f:
@@ -50,8 +50,9 @@ class HanmanSpider():
 
         # self.do_book(books[4])
         for bookitem in books:
-            self.do_book(bookitem)
-            time.sleep(1)
+            if id == '' or id == bookitem["id"].strip():
+                self.do_book(bookitem)
+                time.sleep(1)
         print("end.")
         print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
     

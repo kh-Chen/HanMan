@@ -14,24 +14,31 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         html = ""
-        route_path = self.path
+        route_path = self.path[6:]
         if '?' in self.path:
             route_path = self.path.split('?',1)[0]
 
         match route_path:
-            # case '/':print()
-            case '/comic/booklist.html'    : html = self.get_booklist()
-            case '/comic/chapterlist.html' : html = self.get_chapterlist()
-            case '/comic/imglist.html' : html = self.get_imglist()
-            case '/comic/switchend': 
+            case '/'                 : html = self.get_booklist()
+            case '/booklist.html'    : html = self.get_booklist()
+            case '/chapterlist.html' : html = self.get_chapterlist()
+            case '/imglist.html'     : html = self.get_imglist()
+            case '/switchend': 
                 self.switchend()
                 html = self.get_booklist()
-            case '/comic/move': 
+            case '/move': 
                 self.move()
                 html = self.get_booklist()
             case _:
-                print(self.path)
-                html=self.path
+                if route_path.endswith(".html"):
+                    full_path = os.getcwd() + route_path
+                    if os.path.isfile(full_path):
+                        with open(full_path, 'rb') as reader:
+                            html = reader.read().decode()
+                    else:
+                        html="not file :" + full_path
+                else:
+                    html=self.path
         
         self.send_content(html)
 
@@ -210,4 +217,4 @@ def encodeURLSafe(_str):
 def decodeURLSafe(_str):
     return str(base64.urlsafe_b64decode(_str), encoding='utf-8')
 def replaceURLSafe(_str):
-    return _str.replace("&", "&amp;").replace("\\?", "%3F")
+    return _str.replace("&", "&amp;").replace("?", "%3F")
