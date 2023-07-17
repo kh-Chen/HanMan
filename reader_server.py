@@ -14,9 +14,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         html = ""
-        route_path = self.path[6:]
-        if '?' in self.path:
+        route_path = self.path
+        if '?' in route_path:
             route_path = self.path.split('?',1)[0]
+
+        if route_path.startswith("/comic"):
+            route_path = route_path[6:]
 
         match route_path:
             case '/'                 : html = self.get_booklist()
