@@ -29,8 +29,8 @@ class HanmanSpider():
             'referer': 'https://se8.us/'
         }
         self.proxies={
-            'http':'192.168.100.150:10087',
-            'https':'192.168.100.150:10087'
+            # 'http':'http://chenkh:6659968@192.168.100.150:10087/',
+            # 'https':'http://chenkh:6659968@192.168.100.150:10087/',
         }
         self.book_img_path = self.init_dir()
 
@@ -48,11 +48,11 @@ class HanmanSpider():
         with open(jsonfile, "r") as f:
             books = json.load(f)
 
-        # self.do_book(books[4])
-        for bookitem in books:
-            if id == '' or id == bookitem["id"].strip():
-                self.do_book(bookitem)
-                time.sleep(1)
+        self.do_book(books[10])
+        # for bookitem in books:
+        #     if id == '' or id == bookitem["id"].strip():
+        #         self.do_book(bookitem)
+        #         time.sleep(1)
         print("end.")
         print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
     
@@ -174,9 +174,18 @@ class HanmanSpider():
         text = res.text
         soup = BeautifulSoup(text, 'lxml')
         img_tags = soup.select('div.rd-article-wr.clearfix>div>img')
+
+        if len(img_tags) == 0:
+            print("using new rule...")
+            img_tags = soup.select('ul.comic-list > li > img')
+        
         pool = ThreadPoolExecutor(max_workers=4)
         for img_tag in img_tags:
-            img_link = img_tag.attrs["data-original"]
+            if img_tag.has_attr("data-original"):
+                img_link = img_tag.attrs["data-original"]
+            else:
+                img_link = img_tag.attrs["src"]
+            
             img_no = img_tag.attrs["alt"].zfill(7)
             img_path = os.path.join(chapter_path, img_no)
             if not os.path.exists(img_path):
