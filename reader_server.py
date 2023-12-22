@@ -88,7 +88,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             for chapter in chapters:
                 values = {
                     'url'          : f"imglist.html?bookname={encodeURLSafe(bookname)}&chapter={encodeURLSafe(os.path.basename(chapter))}",
-                    'chapter_name' : os.path.basename(chapter)
+                    'chapter_name' : os.path.basename(replaceURLSafe(chapter))
                 }
                 chapter_link_htmls += templates.TEMPLATE_CHAPTER_LINK.format(**values)  
         
