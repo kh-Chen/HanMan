@@ -9,7 +9,7 @@ def download(link, filepath, headers, proxies):
                     f.write(r.content)
                 break
             else:
-                print(f'获取失败。code: {r.status_code} link: {link}')
+                print(f'获取失败。code: {r.status_code} link: {link} filepath: {filepath}')
         except Exception as e:
-            print(f'获取失败。code: {r.status_code} link: {link} error: {e}')
-    print(filepath + "download end.")
+            print(f'获取失败。code: {r.status_code} link: {link} filepath: {filepath} error: {e}')
+    print(filepath + " download end.")

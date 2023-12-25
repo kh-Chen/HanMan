@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from urllib.request import urlretrieve
 from concurrent.futures import ThreadPoolExecutor
 from zhconv import convert
+import utils
 # 需要额外安装brotli，lxml
 
 class Se8us():
@@ -33,11 +34,11 @@ class Se8us():
             # 'https':'http://chenkh:6659968@192.168.100.150:10087/',
         }
 
-    def do_book(self, bookid, bookmid, bookname, book_img_path):
+    def do_book(self, bookid, bookname, book_img_path):
         print(f"running book: {bookname}")
 
-        if bookmid == '':
-            bookmid = self.get_book_mid(bookid)
+        # if bookmid == '':
+        bookmid = self.get_book_mid(bookid)
         
         chapters = self.get_chapters(bookmid)
         
@@ -92,20 +93,18 @@ class Se8us():
         soup = BeautifulSoup(text, 'lxml')
         a_tag = soup.select('div.comic-handles.clearfix > a.btn--collect.j-user-collect')[0]
         mid = a_tag.attrs['data-id']
-        jsonfile = os.path.join(self.store_dir_path, "books.json")
-        with open(jsonfile, "r+") as f:
-            books = json.load(f)
-            for bookitem in books:
-                if bookitem["id"] == bookid:
-                    bookitem["mid"] = mid
-                    break
-            jsonstr = json.dumps(books, ensure_ascii=False)
-            jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
-            f.seek(0)
-            f.truncate()
-            f.write(jsonstr)
-
-
+        # jsonfile = os.path.join(self.store_dir_path, "books.json")
+        # with open(jsonfile, "r+") as f:
+        #     books = json.load(f)
+        #     for bookitem in books:
+        #         if bookitem["id"] == bookid:
+        #             bookitem["mid"] = mid
+        #             break
+        #     jsonstr = json.dumps(books, ensure_ascii=False)
+        #     jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
+        #     f.seek(0)
+        #     f.truncate()
+        #     f.write(jsonstr)
         return mid
 
 
@@ -154,24 +153,9 @@ class Se8us():
             img_no = img_tag.attrs["alt"].zfill(7)
             img_path = os.path.join(chapter_path, img_no)
             if not os.path.exists(img_path):
-                pool.submit(self.download, img_link.strip(), img_path)
+                pool.submit(utils.download, img_link.strip(), img_path, self.headers, self.proxies)
                 
         pool.shutdown()
-
-
-    def download(self, link, filepath):
-        for i in range(3):
-            try:
-                r = requests.get(url=link, headers=self.headers, proxies=self.proxies)
-                if r.status_code == 200:
-                    with open(filepath, 'wb') as f:
-                        f.write(r.content)
-                    break
-                else:
-                    print(f'获取失败。code: {r.status_code} link: {link}')
-            except Exception as e:
-                print(f'获取失败。code: {r.status_code} link: {link} error: {e}')
-        # print(filepath + " end.")
 
 
 if __name__ == '__main__':

@@ -44,10 +44,10 @@ class Ikanhm():
         
         folders=[]
         ready_chapters = os.listdir(book_img_path)
-        for chapter in chapters:
+        for chapter in reversed(chapters):
             num = chapter['index']
             
-            chapter_name = convert(chapter['name'].strip(),'zh-cn')
+            chapter_name = chapter['name']
             chapter_link = chapter['link'].strip()
 
             chapter_name_full = f"{num}. {chapter_name}"
@@ -65,6 +65,7 @@ class Ikanhm():
             folders.append(chapter_path)
             try:
                 self.get_chapter_pic(chapter_link, chapter_path)
+                # time.sleep(1)
             except Exception as e:
                 print(e)
                 
@@ -121,14 +122,32 @@ class Ikanhm():
         soup = BeautifulSoup(text, 'lxml')
         a_list = soup.select('div#chapterlistload > ul#detail-list-select > li > a')
         chapters=[]
+        name_set = []
+        name_repeats = []
         for index, a_tag in enumerate(a_list):
-            chapters.append({"index":str(index + 1).zfill(3),"name":a_tag.get_text(),"link":a_tag.attrs["href"]})
-        
+            c_name = convert(a_tag.get_text().strip(),'zh-cn')
+            if c_name in name_set:
+                name_repeats.append(c_name)
+            else:
+                name_set.append(c_name)
+
+            chapters.append({
+                "index":str(index + 1).zfill(3),
+                "name":c_name,
+                "link":a_tag.attrs["href"]
+            })
+
+        for name_repeat in name_repeats:
+            num = 0
+            for chapter_item in chapters:
+                if chapter_item["name"] == name_repeat:
+                    num = num + 1
+                    chapter_item["name"] = chapter_item["name"] + str(num)
+
         return chapters
 
 
     def get_chapter_pic(self, link, chapter_path):
-        # time.sleep(1)
         full_url = f'{self.domain}{link}'
         # print(f"request to: {full_url}")
         res = requests.get(url=full_url, headers=self.headers, proxies=self.proxies)

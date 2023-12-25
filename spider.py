@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import json
 import requests
@@ -19,15 +20,17 @@ class Spider():
 
 
     def run(self, id=''):
+        
         print(f' run at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} --------------------------')
-        jsonfile = os.path.abspath("book_spider.json")
-        with open(jsonfile, "r") as f:
+        # jsonfile = os.path.abspath("book_spider.json")
+        json_path = os.path.join(self.store_dir_path, 'books.json')
+        with open(json_path, "r") as f:
             books = json.load(f)
 
         for bookitem in books:
             if id == '' or id == bookitem["id"].strip():
                 self.spider_book(bookitem)
-                time.sleep(1)
+                time.sleep(10)
         print("end.")
         print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
 
@@ -43,10 +46,8 @@ class Spider():
             ikan = Ikanhm()
             ikan.do_book(bookitem["name"].strip(), book_img_path)
         elif spiderby == 'se8':
-            bookmid = bookitem["mid"].strip()
             bookid = bookitem["id"].strip()
-            bookname = bookitem["name"].strip()
-            Se8us().do_book(bookid,bookmid,bookname,book_img_path)
+            Se8us().do_book(bookid,bookname,book_img_path)
 
 
 def timer():
@@ -58,5 +59,7 @@ def timer():
             time.sleep(1)
 
 if __name__ == '__main__':
+    id = sys.argv[1]
     spider = Spider()
-    spider.run()
+    spider.run(id)
+

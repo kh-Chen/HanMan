@@ -12,6 +12,9 @@ imgs_path = "/var/www/HanMan/images"
 
 class RequestHandler(BaseHTTPRequestHandler):
 
+    def log_message(self, format: str, *args) -> None:
+        return
+
     def do_GET(self):
         html = ""
         route_path = self.path
