@@ -30,7 +30,8 @@ class Spider():
         for bookitem in books:
             if id == '' or id == bookitem["id"].strip():
                 self.spider_book(bookitem)
-                time.sleep(10)
+                if id == '':
+                    time.sleep(10)
         print("end.")
         print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
 

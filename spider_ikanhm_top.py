@@ -44,6 +44,7 @@ class Ikanhm():
         
         folders=[]
         ready_chapters = os.listdir(book_img_path)
+        no_download_count = 0
         for chapter in reversed(chapters):
             num = chapter['index']
             
@@ -62,10 +63,17 @@ class Ikanhm():
 
             if not os.path.exists(chapter_path):
                 os.mkdir(chapter_path)
+                no_download_count = 0
             folders.append(chapter_path)
+
+            if no_download_count >= 5:
+                continue
+
             try:
-                self.get_chapter_pic(chapter_link, chapter_path)
-                # time.sleep(1)
+                print("load chapter: "+chapter_path)
+                notdownload = self.get_chapter_pic(chapter_link, chapter_path)
+                if notdownload:
+                    no_download_count += 1
             except Exception as e:
                 print(e)
                 
@@ -160,7 +168,8 @@ class Ikanhm():
         soup = BeautifulSoup(text, 'lxml')
         img_tags = soup.select('div.comiclist > div.comicpage > div > img')
         
-        pool = ThreadPoolExecutor(max_workers=4)
+        download_list = []
+        # need_load = False
         for index, img_tag in enumerate(img_tags):
             if img_tag.has_attr("data-original"):
                 img_link = img_tag.attrs["data-original"]
@@ -169,10 +178,17 @@ class Ikanhm():
             
             img_path = os.path.join(chapter_path, str(index + 1).zfill(3)+".jpg")
             if not os.path.exists(img_path):
-                pool.submit(utils.download, img_link.strip(), img_path, self.headers, self.proxies)
-                
-        pool.shutdown()
-
+                download_list.append({"img_link": img_link.strip(), "img_path": img_path})
+                # need_load = True
+        
+        #if need_load:
+        if len(download_list) > 0:
+            pool = ThreadPoolExecutor(max_workers=4)
+            for download_item in download_list:
+                pool.submit(utils.download, download_item["img_link"], download_item["img_path"], self.headers, self.proxies)
+            pool.shutdown()
+            return False
+        return True
 
 # if __name__ == '__main__':
     # spider = Ikanhm()
