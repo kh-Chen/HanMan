@@ -87,11 +87,20 @@ class RequestHandler(BaseHTTPRequestHandler):
         if len(chapters) == 0:
             chapter_link_htmls = "            <li>无章节</li> \n"
         else:
-            chapters.sort(key=lambda chapter: int(os.path.basename(chapter)[0:3]))
+            readAt = 0
+            with open(json_path, "r+") as f:
+                books = json.load(f)
+                for bookitem in books:
+                    if bookitem["name"] == bookname:
+                        readAt = int(bookitem["readAt"])
+                        break
+
+            chapters.sort(key=lambda chapter: int(os.path.basename(chapter)[0:3]), reverse = len(chapters)/2 < readAt)
             for chapter in chapters:
                 values = {
                     'url'          : f"imglist.html?bookname={encodeURLSafe(bookname)}&chapter={encodeURLSafe(os.path.basename(chapter))}",
-                    'chapter_name' : os.path.basename(replaceURLSafe(chapter))
+                    'chapter_name' : os.path.basename(replaceURLSafe(chapter)),
+                    'font_color'   : "gray" if readAt != int(os.path.basename(chapter)[0:3]) else "#faf572",
                 }
                 chapter_link_htmls += templates.TEMPLATE_CHAPTER_LINK.format(**values)  
         
@@ -144,12 +153,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         books.append(books[index])
                         books.remove(books[index])
                     break
-            
-            jsonstr = json.dumps(books, ensure_ascii=False)
-            jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
-            f.seek(0)
-            f.truncate()
-            f.write(jsonstr)
+            self.write_json(books,f)
 
 
         return templates.TEMPLATE_CHAPTER_IMGS\
@@ -170,11 +174,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 if bookitem["id"] == bookid:
                     bookitem["end"] = not bookitem["end"]
                     break
-            jsonstr = json.dumps(books, ensure_ascii=False)
-            jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
-            f.seek(0)
-            f.truncate()
-            f.write(jsonstr)
+            self.write_json(books,f)
 
     def move(self):
         query = parse_qs(urlparse(self.path).query)
@@ -201,11 +201,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     elif "down" == type:
                         books[target_index], books[target_index+1] = books[target_index+1], books[target_index]
 
-                    jsonstr = json.dumps(books, ensure_ascii=False)
-                    jsonstr = jsonstr.replace("}, {","}, \n    {").replace("[{","[\n    {").replace("}]","} \n]");
-                    f.seek(0)
-                    f.truncate()
-                    f.write(jsonstr)
+                    self.write_json(books,f)
 
 
     def send_content(self, page):
@@ -217,6 +213,18 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(b_page)))
         self.end_headers()
         self.wfile.write(b_page)
+    
+    def write_json(self, books, f):
+        jsonstr = json.dumps(books, ensure_ascii=False)
+        jsonstr = jsonstr.replace("}, {","}, \n    {")\
+                .replace("[{","[\n    {")\
+                .replace("}]","} \n]")\
+                .replace("true, \"","true,  \"")\
+                .replace('"spiderby": "", "','"spiderby": "",     "')
+        f.seek(0)
+        f.truncate()
+        f.write(jsonstr)
+
 
 def encodeURLSafe(_str):
     return base64.urlsafe_b64encode(_str.encode()).decode()

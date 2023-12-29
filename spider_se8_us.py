@@ -45,7 +45,7 @@ class Se8us():
         for index, chapter in enumerate(chapters):
             num = str(index + 1).zfill(3)
             pnum = chapter['pnum']
-            chapter_name = convert(chapter['name'].strip())
+            chapter_name = convert(chapter['name'].strip(),'zh-cn')
             chapter_link = chapter['link'].strip()
 
             chapter_name_full = f"{num}. {chapter_name}"

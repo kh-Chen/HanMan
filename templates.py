@@ -103,7 +103,7 @@ TEMPLATE_CHAPTER_LINK=\
 '''
     <div class="condiv" >
         <a href="{url}">
-            <div >{chapter_name}</div>
+            <div style="color: {font_color}">{chapter_name}</div>
         </a>
     </div>
 '''
