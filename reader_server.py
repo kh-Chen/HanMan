@@ -59,7 +59,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             chapter_folder = os.path.join(imgs_path, bookitem['name'])
             if os.path.exists(chapter_folder) and os.path.isdir(chapter_folder):
                 chapters = os.listdir(chapter_folder)
-                maxchapter = max(chapters, key=lambda chapter: int(os.path.basename(chapter)[0:3]))[0:3]
+                maxchapter = 0
+                if len(chapters) > 0:
+                    maxchapter = max(chapters, key=lambda chapter: int(os.path.basename(chapter)[0:3]))[0:3]
+
             values = {
                 'url'        : f"chapterlist.html?bookname={base64.urlsafe_b64encode(bookitem['name'].encode()).decode()}",
                 'status'     : "已完结" if bookitem['end'] else "连载中",

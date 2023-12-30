@@ -41,6 +41,9 @@ class Ikanhm():
             return 
         
         chapters = self.get_chapters(link)
+        if chapters is None or len(chapters) == 0:
+            print(f"bookname {bookname} get chapters error.")
+            return 
         
         folders=[]
         ready_chapters = os.listdir(book_img_path)
