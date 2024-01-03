@@ -29,14 +29,14 @@ class Spider():
 
         for bookitem in books:
             if id == '' or id == bookitem["id"].strip():
-                self.spider_book(bookitem)
+                self.spider_book(bookitem, id != '')
                 if id == '':
                     time.sleep(10)
         print("end.")
         print(f'stop at {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} -------------------------')
 
 
-    def spider_book(self, bookitem):
+    def spider_book(self, bookitem, specify = False):
         bookname = bookitem["name"].strip()
         spiderby = bookitem["spiderby"].strip()
         book_img_path = os.path.join(self.book_img_folder, bookname)
@@ -45,7 +45,7 @@ class Spider():
         
         if spiderby == 'ikan':
             ikan = Ikanhm()
-            ikan.do_book(bookitem["name"].strip(), book_img_path)
+            ikan.do_book(bookitem["name"].strip(), book_img_path, 0 if specify else 5)
         elif spiderby == 'se8':
             bookid = bookitem["id"].strip()
             Se8us().do_book(bookid,bookname,book_img_path)

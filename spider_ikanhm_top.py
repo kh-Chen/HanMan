@@ -33,7 +33,7 @@ class Ikanhm():
             # 'https':'http://chenkh:6659968@192.168.100.150:10087/',
         }
         
-    def do_book(self, bookname, book_img_path):
+    def do_book(self, bookname, book_img_path, stop_num = 5):
         print(f"running book with ikanhm: {bookname}")
         link = self.get_book_link(bookname)
         if link is None:
@@ -69,7 +69,7 @@ class Ikanhm():
                 no_download_count = 0
             folders.append(chapter_path)
 
-            if no_download_count >= 5:
+            if stop_num != 0 and no_download_count >= stop_num:
                 continue
 
             try:
