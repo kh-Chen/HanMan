@@ -5,6 +5,7 @@ import json
 import requests
 from spider_ikanhm_top import Ikanhm
 from spider_se8_us import Se8us
+from spider_rouman5 import Rouman
 
 class Spider():
     def __init__(self):
@@ -44,8 +45,9 @@ class Spider():
             os.makedirs(book_img_path)
         
         if spiderby == 'ikan':
-            ikan = Ikanhm()
-            ikan.do_book(bookitem["name"].strip(), book_img_path, 0 if specify else 5)
+            Ikanhm().do_book(bookitem["name"].strip(), book_img_path, 0 if specify else 5)
+        elif spiderby == 'rouman':
+            Rouman().do_book(bookitem["name"].strip(), book_img_path, 0 if specify else 5)
         elif spiderby == 'se8':
             bookid = bookitem["id"].strip()
             Se8us().do_book(bookid,bookname,book_img_path)

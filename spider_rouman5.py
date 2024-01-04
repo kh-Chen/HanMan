@@ -1,17 +1,21 @@
 import os
-import shutil
 import requests
-import time
+import shutil
 from bs4 import BeautifulSoup
-from urllib.request import urlretrieve
 from concurrent.futures import ThreadPoolExecutor
-from zhconv import convert
+import json
 import utils
-# 需要额外安装brotli，lxml
+import base64 
+import hashlib
+from zhconv import convert
 
-class Ikanhm():
+from PIL import Image
+
+
+
+class Rouman():
     def __init__(self):
-        self.domain = 'http://www.mxshm.top/'
+        self.domain = 'https://roum2.xyz/'
         self.headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
             'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -32,9 +36,9 @@ class Ikanhm():
             # 'http':'http://chenkh:6659968@192.168.100.150:10087/',
             # 'https':'http://chenkh:6659968@192.168.100.150:10087/',
         }
-        
+
     def do_book(self, bookname, book_img_path, stop_num = 5):
-        print(f"running book with ikanhm: {bookname}")
+        print(f"running book with rouman: {bookname}")
         link = self.get_book_link(bookname)
         if link is None:
             print(f"bookname {bookname} not found.")
@@ -44,7 +48,7 @@ class Ikanhm():
         if chapters is None or len(chapters) == 0:
             print(f"bookname {bookname} get chapters error.")
             return 
-        
+
         folders=[]
         ready_chapters = os.listdir(book_img_path)
         no_download_count = 0
@@ -75,6 +79,7 @@ class Ikanhm():
             try:
                 print("load chapter: "+chapter_path)
                 notdownload = self.get_chapter_pic(chapter_link, chapter_path)
+                # break
                 if notdownload:
                     no_download_count += 1
             except Exception as e:
@@ -89,8 +94,10 @@ class Ikanhm():
                 shutil.rmtree(dirpath)
 
 
+
+
     def get_book_link(self, bookname):
-        url = f"{self.domain}/search?keyword={bookname}"
+        url = f"{self.domain}/search?term={bookname}"
         # print(f"request to: {url}")
         try:
             res = requests.get(url=url, headers=self.headers, proxies=self.proxies)
@@ -103,16 +110,14 @@ class Ikanhm():
             print(f"request to {url} error! code:{res.status_code}")
             return None
         text = res.text
-        
         soup = BeautifulSoup(text, 'lxml')
-        a_list = soup.select('ul.mh-list > li > div.mh-item > a')
-        
+
+        a_list = soup.select('ul[class^="search_listArea"] > div > li[class^="comicBox_li"] > a')
         for a_tag in a_list:
-            link = a_tag.attrs["href"]
-            title = a_tag.attrs["title"]
-            if convert(title,'zh-cn') == convert(bookname,'zh-cn'):
-                return link
-        
+            span_tag = a_tag.select('div[class^="comicBox_lineTit"] > span[class^="comicBox_title"]')[0]
+            if convert(span_tag.text,'zh-cn') == convert(bookname,'zh-cn'):
+                return a_tag.attrs["href"]
+
         return None
 
 
@@ -131,7 +136,8 @@ class Ikanhm():
             return []
         text = res.text
         soup = BeautifulSoup(text, 'lxml')
-        a_list = soup.select('div#chapterlistload > ul#detail-list-select > li > a')
+        a_list = soup.select('div[class^="bookid_chapterBox"] > div[class^="bookid_chapter"] > a')
+
         chapters=[]
         name_set = []
         name_repeats = []
@@ -169,51 +175,102 @@ class Ikanhm():
         text = res.text
         
         soup = BeautifulSoup(text, 'lxml')
-        img_tags = soup.select('div.comiclist > div.comicpage > div > img')
+        data_tag = soup.select('script#__NEXT_DATA__')[0]
         
+
+        data = json.loads(data_tag.get_text())["props"]["pageProps"]
+        images = []
+        if "images" in data.keys():
+            images = data["images"]
+        elif "chapterAPIPath" in data.keys():
+            images = self.get_chapterAPIPath(data["chapterAPIPath"])
+        
+
+
         download_list = []
-        # need_load = False
-        for index, img_tag in enumerate(img_tags):
-            if img_tag.has_attr("data-original"):
-                img_link = img_tag.attrs["data-original"]
-            else:
-                img_link = img_tag.attrs["src"]
-            
+        for index, item in enumerate(images):
             img_path = os.path.join(chapter_path, str(index + 1).zfill(3)+".jpg")
             if not os.path.exists(img_path):
-                download_list.append({"img_link": img_link.strip(), "img_path": img_path})
-                # need_load = True
-        
-        #if need_load:
+                download_list.append({"img_link": item["src"], "img_path": img_path, "scramble":item["scramble"]})
+
         if len(download_list) > 0:
             pool = ThreadPoolExecutor(max_workers=4)
             for download_item in download_list:
                 pool.submit(utils.download, download_item["img_link"], download_item["img_path"], self.headers, self.proxies)
             pool.shutdown()
+
+            for download_item in download_list:
+                if download_item["scramble"]:
+                    part_num = parse_part_num(os.path.splitext(download_item["img_link"].split("/")[-1])[0])
+                    re_cut_img(download_item["img_path"], part_num)
             return False
         return True
 
-# if __name__ == '__main__':
-    # spider = Ikanhm()
-    # spider.do_book(406,"偷窺（全集无删减）", "/var/www/HanMan/images/偷窺（全集无删减）")
+    def get_chapterAPIPath(self, link):
+        full_url = f'{self.domain}{link}'
+        res = requests.get(url=full_url, headers=self.headers, proxies=self.proxies)
+        res.encoding = 'utf-8'
+        if res.status_code != 200:
+            print(f"request to {full_url} error! code:{res.status_code}")
+            return []
+        
+        data = json.loads(res.text)
+        return data["chapter"]["images"]
 
 
-    # books = os.listdir('/var/www/HanMan/images')
-    # for dir in books:
-    #     dir = os.path.join('/var/www/HanMan/images',dir)
-    #     ready_chapters = os.listdir(dir)
-    #     for ready_chapter in ready_chapters:
-    #         # if "&" in ready_chapter:
-    #         #     print(f"{dir}/{ready_chapter}")
-    #         a = ready_chapter.replace("&hellip;", "…").replace("&ldquo;", "“").replace("&rdquo;", "”").replace("&hearts;", "♥")\
-    #         .replace("&mdash;", "—").replace("&#40;", "(").replace("&#41;", ")").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
-            
-    #         # a = convert(ready_chapter,'zh-cn')#
-    #         if ready_chapter != a:
-    #             print(f"rename: {dir}/{ready_chapter} -> {a}")
-    #             os.rename(os.path.join(dir,ready_chapter), os.path.join(dir,a))
-            
 
 
+
+
+
+
+
+
+
+# for (var part_num, l = height % part_num, index = 0; index < part_num; index++) {
+#    var part_height = Math.floor(height / part_num)
+#    var parse_h = part_height * index  
+#    var cut_h = height - part_height * (index + 1) - l; 
+#    0 == index ? part_height += l : cut_h += l,
+#    n.drawImage(e, 0, cut_h, width, part_height, 0, parse_h, width, part_height)
+#                         }
+def re_cut_img(file_path, part_num):
+    img = Image.open(file_path)
+    width, height = img.size
+    part_height = int(height/part_num)
+    img_list = []
+    index = 0
+    while True:
+        cut_h = index*part_height
+        cut_to_h = (index+1)*part_height
+        if (index+1)*part_height < height and (index+2)*part_height > height:
+            cut_to_h = height
+        cropped = img.crop((0, cut_h, width, cut_to_h))
+        img_list.append(cropped)
+        if cut_to_h == height:
+            break
+        index+=1
+    # target = Image.new('RGB', (width, height))
+    h = 0
+    for _img in reversed(img_list):
+        img.paste(_img, (0, h))
+        h+=_img.size[1]
+        
+    img.save(file_path)
+
+
+def parse_part_num(b64str):
+    if(len(b64str)%3 == 1): 
+        b64str += "=="
+    elif(len(b64str)%3 == 2): 
+        b64str += "=" 
     
+    sr=base64.b64decode(bytes(b64str,'utf-8'))
+    md5str = hashlib.md5(sr).hexdigest()
+    hex_array = list(bytes.fromhex(md5str))
+    return hex_array[-1] % 10 + 5
     
+
+if __name__ == '__main__':
+    Rouman().do_book("花店三母女","./test")
+
